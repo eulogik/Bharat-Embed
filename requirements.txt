@@ -1,4 +1,7 @@
 sentence-transformers>=3.0
+# NOTE: release transformers may lag the new embedding_gemma2 arch.
+# Step 2 hit this on 4.57.6. Use git main until release catches up:
+# pip install -U "git+https://github.com/huggingface/transformers.git"
 transformers>=4.48
 peft>=0.12
 datasets>=3.0
