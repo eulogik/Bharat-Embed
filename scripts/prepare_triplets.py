@@ -111,8 +111,8 @@ def pull_banking77(n_pairs: int):
         with open(dest, newline="") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                text = row.get("text", "").strip()
-                label = row.get("label", "").strip()
+                text = (row.get("text") or row.get("query") or "").strip()
+                label = (row.get("label") or row.get("category") or row.get("intent") or "").strip()
                 if text and label:
                     texts_labels.append((text, label))
     if not texts_labels:
