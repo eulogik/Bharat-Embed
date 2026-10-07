@@ -90,3 +90,4 @@ Prior gap closed: Xenova, e5, reranker, Qwen VL are now verified. No more unveri
 - 2026-10-07: second pass. HF API recheck for all 10 download rows. Closed Xenova, e5, reranker, Qwen VL gaps. Proved FLORES CC-BY-SA via GitHub. Corrected GGUF risk, official v2 GGUF is live. Cleaned file to match AGENTS.md style (no em dashes, plain tone).
 - 2026-10-07: third pass. Verified flashrank-pro-base card (149M, 0.3314 five-set, Apache-2.0, BEIR style footnote). Local env check (torch 2.12.1, mps True).
 - 2026-10-07: scaffold ship. Prefix helpers plus 7 tests green. All 8 dry runs pass. Eval gates locked. Cards plus USAGE plus frozen policy written. No em dash in new files.
+- 2026-10-07: ship-ready commits. f7f54fe scaffold (30 files). 457e2cc gates test plus makefile plus collection (12 tests green). Product is code complete pre weights. Heavy steps still need approval: pip install, 3GB base pull, triplet freeze, M4 train, eval, export, HF push.
