@@ -10,3 +10,4 @@ onnx>=1.17
 onnxruntime>=1.19
 huggingface_hub>=0.26
 numpy>=1.26
+pillow>=10.0
