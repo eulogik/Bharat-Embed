@@ -90,25 +90,39 @@ def synth_legal(n: int, prefix: str = "synth-legal-ours"):
     return rows
 
 
-def pull_banking77(n_pairs: int):
-    from datasets import load_dataset
+BANKING_CSVS = [
+    "https://raw.githubusercontent.com/PolyAI-LDN/task-specific-datasets/master/banking_data/train.csv",
+    "https://raw.githubusercontent.com/PolyAI-LDN/task-specific-datasets/master/banking_data/test.csv",
+]
 
-    last_err = None
-    ds = None
-    for name in ("PolyAI/banking77", "banking77"):
-        try:
-            ds = load_dataset(name, split="train")
-            print(f"banking source: {name}")
-            break
-        except Exception as e:
-            last_err = e
-    if ds is None:
-        raise RuntimeError(f"banking77 pull failed: {last_err}")
-    rows = []
+
+def pull_banking77(n_pairs: int):
+    import csv
+    import urllib.request
+
+    raw_dir = Path("/Volumes/KIOXIA 1TB/bharat-embed/data/_raw/banking77")
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    texts_labels: list = []
+    for url in BANKING_CSVS:
+        dest = raw_dir / url.split("/")[-1]
+        if not dest.exists():
+            print(f"downloading {url}")
+            urllib.request.urlretrieve(url, dest)
+        with open(dest, newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                text = row.get("text", "").strip()
+                label = row.get("label", "").strip()
+                if text and label:
+                    texts_labels.append((text, label))
+    if not texts_labels:
+        raise RuntimeError("banking77 csv pull empty")
+    print(f"banking source: PolyAI task-specific-datasets csv ({len(texts_labels)} rows)")
     by_label: dict = {}
-    for r in ds:
-        by_label.setdefault(r["label"], []).append(r["text"])
+    for text, label in texts_labels:
+        by_label.setdefault(label, []).append(text)
     labels = list(by_label)
+    rows = []
     i = 0
     while len(rows) < n_pairs:
         lab = labels[i % len(labels)]
@@ -120,7 +134,7 @@ def pull_banking77(n_pairs: int):
             "query": f"task: classification | query: {pos}",
             "pos": f"title: none | text: {texts[(i + 1) % len(texts)]}",
             "negs": [f"title: none | text: {neg}"],
-            "src": "banking77-CC-BY-4.0",
+            "src": "banking77-CC-BY-4.0-PolyAI-csv",
         })
         i += 1
     return rows
