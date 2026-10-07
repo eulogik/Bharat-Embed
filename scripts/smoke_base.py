@@ -33,7 +33,7 @@ def main():
         config_kwargs={"vision_config": None, "audio_config": None},
         model_kwargs={"torch_dtype": torch.float32},
     )
-    dim = model.get_sentence_embedding_dimension()
+    dim = model.get_embedding_dimension()
     print(f"dim={dim}")
     assert dim == 768, f"want 768, got {dim}"
 
