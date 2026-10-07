@@ -7,7 +7,7 @@ gguf/
 eval/*.json
 eval/*.png
 data/frozen/*.jsonl
-data/frozen/SHA256SUMS
+!data/frozen/README.md
 *.tflite
 *.gguf
 .DS_Store
