@@ -1,0 +1,9 @@
+sentence-transformers>=3.0
+transformers>=4.48
+peft>=0.12
+datasets>=3.0
+optimum[onnxruntime]>=1.20
+onnx>=1.17
+onnxruntime>=1.19
+huggingface_hub>=0.26
+numpy>=1.26

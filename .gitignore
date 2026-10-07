@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+checkpoints/
+onnx/
+gguf/
+eval/*.json
+eval/*.png
+data/frozen/*.jsonl
+data/frozen/SHA256SUMS
+*.tflite
+*.gguf
+.DS_Store
