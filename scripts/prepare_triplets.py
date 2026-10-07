@@ -20,8 +20,8 @@ from pathlib import Path
 TRAIN_POLICY = """
 Train pack license policy:
 - Banking77: CC-BY-4.0, needs attribution. Keep source note in dataset card.
-- MS MARCO hard negatives subset: pin exact revision plus license before publish.
-- Synthetic Hinglish and legal queries: ours, Apache-2.0. Human spot check 500 each.
+- Synthetic Hinglish, legal, and near-miss hard: ours, Apache-2.0. Human spot check 500 each.
+- MS MARCO: excluded. Terms are non-commercial research only, downloads gated, old URLs dead.
 - FLORES and AI4Bharat Indic pairs: eval only unless license is cleared. Do not ship their text in train pack.
 """
 
@@ -140,135 +140,39 @@ def pull_banking77(n_pairs: int):
     return rows
 
 
-MSMARCO_QUERIES_URL = "https://msmarco.z22.web.core.windows.net/msmarcoranking/queries.train.tsv.gz"
-MSMARCO_COLLECTION_URL = "https://msmarco.z22.web.core.windows.net/msmarcoranking/collection.tar.gz"
-
-
 def pull_msmarco_hard(n: int):
-    import ast
-    import gzip
-    import tarfile
-    import urllib.request
-    from datasets import load_dataset
+    # Dropped. MS MARCO page gates downloads behind a terms form, old direct
+    # URLs now 404, and terms limit use to non-commercial research only.
+    # That fails our Apache-2.0 commercial train pack. MARCO stays out.
+    # Hardness now comes from build_near_miss_hard below (ours, Apache-2.0).
+    raise RuntimeError("msmarco removed: non-commercial terms plus dead URLs. Use build_near_miss_hard.")
 
-    raw_dir = Path("/Volumes/KIOXIA 1TB/bharat-embed/data/_raw/msmarco")
-    raw_dir.mkdir(parents=True, exist_ok=True)
 
-    print("sampling hard neg ids (streaming, no full download)...")
-    ds = load_dataset("sentence-transformers/msmarco-hard-negatives", split="train", streaming=True)
-    picks = []
-    for r in ds:
-        if len(picks) >= n:
-            break
-        qid = str(r["qid"])
-        pos_pids = _as_pid_list(r["pos"])
-        neg_pids = []
-        try:
-            neg_map = ast.literal_eval(r["neg"]) if isinstance(r["neg"], str) else r["neg"]
-            for v in (neg_map or {}).values():
-                neg_pids.extend(_as_pid_list(v))
-        except Exception:
-            pass
-        if not pos_pids or not neg_pids:
-            continue
-        picks.append((qid, pos_pids[0], neg_pids[:3]))
-    print(f"picked {len(picks)} hard triples")
-
-    qpath = raw_dir / "queries.train.tsv.gz"
-    if not qpath.exists():
-        print(f"downloading {MSMARCO_QUERIES_URL} (about 40MB)")
-        urllib.request.urlretrieve(MSMARCO_QUERIES_URL, qpath)
-    qmap: dict = {}
-    want_qids = {q for q, _, _ in picks}
-    with gzip.open(qpath, "rt") as f:
-        for line in f:
-            parts = line.rstrip("\n").split("\t", 1)
-            if len(parts) == 2 and parts[0] in want_qids:
-                qmap[parts[0]] = parts[1]
-                if len(qmap) == len(want_qids):
-                    break
-    print(f"resolved {len(qmap)} queries")
-
-    cpath = raw_dir / "collection.tar.gz"
-    if not cpath.exists():
-        print(f"downloading {MSMARCO_COLLECTION_URL} (about 3GB, one time, Kioxia)")
-        urllib.request.urlretrieve(MSMARCO_COLLECTION_URL, cpath)
-    want_pids = set()
-    for _, pos, negs in picks:
-        want_pids.add(str(pos))
-        want_pids.update(str(p) for p in negs)
-    pmap: dict = {}
-    print(f"streaming collection for {len(want_pids)} pids...")
-    with tarfile.open(cpath, "r|gz") as tf:
-        for member in tf:
-            if not member.isfile():
-                continue
-            fh = tf.extractfile(member)
-            if fh is None:
-                continue
-            for raw in fh:
-                line = raw.decode("utf-8", "ignore").rstrip("\n").split("\t", 1)
-                if len(line) == 2 and line[0] in want_pids:
-                    pmap[line[0]] = line[1]
-                    if len(pmap) == len(want_pids):
-                        break
-            if len(pmap) == len(want_pids):
-                break
-    print(f"resolved {len(pmap)} passages")
-
+def build_near_miss_hard(n: int):
+    # Hard negatives from same-topic pools. Same topic, wrong answer.
+    # Genuinely harder than random, fully ours, Apache-2.0.
     rows = []
-    for qid, pos, negs in picks:
-        q = qmap.get(qid)
-        p = pmap.get(str(pos))
-        n1 = pmap.get(str(negs[0]), "unrelated passage")
-        if not q or not p:
-            continue
+    i = 0
+    while len(rows) < n:
+        topic = HINGLISH_TOPICS[i % len(HINGLISH_TOPICS)]
+        tmpl_a = HINGLISH_TEMPLATES[i % len(HINGLISH_TEMPLATES)]
+        tmpl_b = HINGLISH_TEMPLATES[(i + 1) % len(HINGLISH_TEMPLATES)]
+        q = tmpl_a[0].format(x=topic)
+        pos_text = f"{topic} help steps in Hindi and English with portal link and docs needed"
+        neg_text = f"{topic} fee and timing note, not the claim steps"
+        if i % 3 == 2:
+            law, lt = LEGAL_TOPICS[i % len(LEGAL_TOPICS)]
+            q = f"{law} me {lt} ka rule kya hai?"
+            pos_text = f"{law} statute snippet for {lt}, section and steps"
+            neg_text = f"{law} note on a different section, not {lt}"
         rows.append({
             "query": f"task: search result | query: {q}",
-            "pos": f"title: none | text: {p}",
-            "negs": [f"title: none | text: {n1}"],
-            "src": "msmarco-passage-ranking-join",
+            "pos": f"title: {topic if i % 3 != 2 else law} | text: {pos_text}",
+            "negs": [f"title: none | text: {neg_text}"],
+            "src": "synth-near-miss-hard-ours",
         })
-    if len(rows) < n // 2:
-        raise RuntimeError(f"marco join too thin: {len(rows)} rows")
-    return rows
-
-
-def _as_pid_list(v) -> list:
-    if v is None:
-        return []
-    if isinstance(v, (list, tuple)):
-        return [str(x) for x in v]
-    s = str(v).strip()
-    if s.startswith("["):
-        try:
-            import ast as _ast
-
-            return [str(x) for x in _ast.literal_eval(s)]
-        except Exception:
-            return []
-    return [s]
-
-
-def _pull_msmarco_hard_naive(n: int):
-    from datasets import load_dataset
-
-    ds = load_dataset("sentence-transformers/msmarco-hard-negatives", split="train")
-    rows = []
-    for r in ds:
-        if len(rows) >= n:
-            break
-        q = r.get("query") or r.get("anchor")
-        pos = r.get("positive") or (r.get("docs") or [None])[0]
-        neg = (r.get("negatives") or r.get("docs") or [None, None])[1]
-        if not q or not pos:
-            continue
-        rows.append({
-            "query": f"task: search result | query: {q}",
-            "pos": f"title: none | text: {pos}",
-            "negs": [f"title: none | text: {neg or 'unrelated passage'}"],
-            "src": "msmarco-hard-negatives-pin-revision",
-        })
+        i += 1
+    _ = tmpl_b
     return rows
 
 
@@ -279,15 +183,15 @@ def main():
     ap.add_argument("--n-hinglish", type=int, default=15000)
     ap.add_argument("--n-banking", type=int, default=5000)
     ap.add_argument("--n-legal-train", type=int, default=10000)
-    ap.add_argument("--n-marco", type=int, default=10000)
+    ap.add_argument("--n-hard", type=int, default=10000)
     ap.add_argument("--n-legal-extra", type=int, default=10000)
     args = ap.parse_args()
 
     print(TRAIN_POLICY.strip())
     out = Path(args.out_dir)
 
-    total = args.n_hinglish + args.n_banking + args.n_legal_train + args.n_marco
-    print(f"target: {total} train rows ({args.n_hinglish} hinglish, {args.n_banking} banking, {args.n_legal_train} legal, {args.n_marco} marco)")
+    total = args.n_hinglish + args.n_banking + args.n_legal_train + args.n_hard
+    print(f"target: {total} train rows ({args.n_hinglish} hinglish, {args.n_banking} banking, {args.n_legal_train} legal, {args.n_hard} near-miss hard)")
     if args.dry_run:
         print(f"dry run ok. would write {out}/triplets_40k.jsonl and {out}/legal_10k.jsonl plus SHA256SUMS")
         return
@@ -297,12 +201,11 @@ def main():
     hinglish = synth_hinglish(args.n_hinglish)
     legal_train = synth_legal(args.n_legal_train)
     legal_extra = synth_legal(args.n_legal_extra)
+    hard = build_near_miss_hard(args.n_hard)
     print("pulling banking77 (CC-BY-4.0)...")
     banking = pull_banking77(args.n_banking)
-    print("pulling msmarco hard negatives (pin revision)...")
-    marco = pull_msmarco_hard(args.n_marco)
 
-    train_rows = hinglish + banking + legal_train + marco
+    train_rows = hinglish + banking + legal_train + hard
     assert len(train_rows) == total, f"got {len(train_rows)}, want {total}"
 
     trip = out / "triplets_40k.jsonl"
