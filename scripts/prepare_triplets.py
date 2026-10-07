@@ -93,7 +93,17 @@ def synth_legal(n: int, prefix: str = "synth-legal-ours"):
 def pull_banking77(n_pairs: int):
     from datasets import load_dataset
 
-    ds = load_dataset("banking77", split="train")
+    last_err = None
+    ds = None
+    for name in ("PolyAI/banking77", "banking77"):
+        try:
+            ds = load_dataset(name, split="train")
+            print(f"banking source: {name}")
+            break
+        except Exception as e:
+            last_err = e
+    if ds is None:
+        raise RuntimeError(f"banking77 pull failed: {last_err}")
     rows = []
     by_label: dict = {}
     for r in ds:
