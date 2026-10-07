@@ -83,10 +83,17 @@ def main():
          "--out", str(KIO / "onnx"), "--int8"],
         "export-onnx",
     )
-    if os.environ.get("HF_TOKEN"):
+    try:
+        from huggingface_hub import HfApi
+
+        HfApi().whoami()
+        logged_in = True
+    except Exception:
+        logged_in = "HF_TOKEN" in os.environ and bool(os.environ.get("HF_TOKEN"))
+    if logged_in:
         run([str(VENV_PY), "scripts/push_hf.py"], "push-hf")
     else:
-        log("HF_TOKEN not set, push skipped (dry-run only). Set it to ship.")
+        log("HF login missing, push skipped (dry-run only). Run hf auth login to ship.")
         run([str(VENV_PY), "scripts/push_hf.py", "--dry-run"], "push-dryrun")
     log("run_4_5 done")
 
