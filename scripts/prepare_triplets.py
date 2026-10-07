@@ -140,7 +140,117 @@ def pull_banking77(n_pairs: int):
     return rows
 
 
+MSMARCO_QUERIES_URL = "https://msmarco.z22.web.core.windows.net/msmarcoranking/queries.train.tsv.gz"
+MSMARCO_COLLECTION_URL = "https://msmarco.z22.web.core.windows.net/msmarcoranking/collection.tar.gz"
+
+
 def pull_msmarco_hard(n: int):
+    import ast
+    import gzip
+    import tarfile
+    import urllib.request
+    from datasets import load_dataset
+
+    raw_dir = Path("/Volumes/KIOXIA 1TB/bharat-embed/data/_raw/msmarco")
+    raw_dir.mkdir(parents=True, exist_ok=True)
+
+    print("sampling hard neg ids (streaming, no full download)...")
+    ds = load_dataset("sentence-transformers/msmarco-hard-negatives", split="train", streaming=True)
+    picks = []
+    for r in ds:
+        if len(picks) >= n:
+            break
+        qid = str(r["qid"])
+        pos_pids = _as_pid_list(r["pos"])
+        neg_pids = []
+        try:
+            neg_map = ast.literal_eval(r["neg"]) if isinstance(r["neg"], str) else r["neg"]
+            for v in (neg_map or {}).values():
+                neg_pids.extend(_as_pid_list(v))
+        except Exception:
+            pass
+        if not pos_pids or not neg_pids:
+            continue
+        picks.append((qid, pos_pids[0], neg_pids[:3]))
+    print(f"picked {len(picks)} hard triples")
+
+    qpath = raw_dir / "queries.train.tsv.gz"
+    if not qpath.exists():
+        print(f"downloading {MSMARCO_QUERIES_URL} (about 40MB)")
+        urllib.request.urlretrieve(MSMARCO_QUERIES_URL, qpath)
+    qmap: dict = {}
+    want_qids = {q for q, _, _ in picks}
+    with gzip.open(qpath, "rt") as f:
+        for line in f:
+            parts = line.rstrip("\n").split("\t", 1)
+            if len(parts) == 2 and parts[0] in want_qids:
+                qmap[parts[0]] = parts[1]
+                if len(qmap) == len(want_qids):
+                    break
+    print(f"resolved {len(qmap)} queries")
+
+    cpath = raw_dir / "collection.tar.gz"
+    if not cpath.exists():
+        print(f"downloading {MSMARCO_COLLECTION_URL} (about 3GB, one time, Kioxia)")
+        urllib.request.urlretrieve(MSMARCO_COLLECTION_URL, cpath)
+    want_pids = set()
+    for _, pos, negs in picks:
+        want_pids.add(str(pos))
+        want_pids.update(str(p) for p in negs)
+    pmap: dict = {}
+    print(f"streaming collection for {len(want_pids)} pids...")
+    with tarfile.open(cpath, "r|gz") as tf:
+        for member in tf:
+            if not member.isfile():
+                continue
+            fh = tf.extractfile(member)
+            if fh is None:
+                continue
+            for raw in fh:
+                line = raw.decode("utf-8", "ignore").rstrip("\n").split("\t", 1)
+                if len(line) == 2 and line[0] in want_pids:
+                    pmap[line[0]] = line[1]
+                    if len(pmap) == len(want_pids):
+                        break
+            if len(pmap) == len(want_pids):
+                break
+    print(f"resolved {len(pmap)} passages")
+
+    rows = []
+    for qid, pos, negs in picks:
+        q = qmap.get(qid)
+        p = pmap.get(str(pos))
+        n1 = pmap.get(str(negs[0]), "unrelated passage")
+        if not q or not p:
+            continue
+        rows.append({
+            "query": f"task: search result | query: {q}",
+            "pos": f"title: none | text: {p}",
+            "negs": [f"title: none | text: {n1}"],
+            "src": "msmarco-passage-ranking-join",
+        })
+    if len(rows) < n // 2:
+        raise RuntimeError(f"marco join too thin: {len(rows)} rows")
+    return rows
+
+
+def _as_pid_list(v) -> list:
+    if v is None:
+        return []
+    if isinstance(v, (list, tuple)):
+        return [str(x) for x in v]
+    s = str(v).strip()
+    if s.startswith("["):
+        try:
+            import ast as _ast
+
+            return [str(x) for x in _ast.literal_eval(s)]
+        except Exception:
+            return []
+    return [s]
+
+
+def _pull_msmarco_hard_naive(n: int):
     from datasets import load_dataset
 
     ds = load_dataset("sentence-transformers/msmarco-hard-negatives", split="train")
