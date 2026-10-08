@@ -1,3 +1,18 @@
+---
+library_name: sentence-transformers
+pipeline_tag: sentence-similarity
+license: apache-2.0
+base_model: eulogik/bharat-embed-270m-gemma2
+language:
+- en
+- hi
+- ar
+tags:
+- legal
+- difc
+- gst
+---
+
 # Bharat legal adapter card draft (adapter only)
 
 Same base as Bharat-Embed 270M plus legal LoRA. Adapter only repo. Small download like 14MB pattern.
