@@ -73,7 +73,11 @@ def main():
 
     # Heavy imports only for real runs so dry run stays light.
     import torch
-    from sentence_transformers import SentenceTransformer, InputExample, losses
+    from sentence_transformers import SentenceTransformer, InputExample
+    try:
+        from sentence_transformers.sentence_transformer.losses import MultipleNegativesRankingLoss
+    except ImportError:
+        from sentence_transformers.losses import MultipleNegativesRankingLoss
     from torch.utils.data import DataLoader
     from peft import LoraConfig, get_peft_model
 
@@ -83,7 +87,7 @@ def main():
         config_kwargs={"vision_config": None, "audio_config": None},
         model_kwargs={"torch_dtype": torch.bfloat16 if dtype == "bfloat16" else torch.float32},
     )
-    assert model.get_sentence_embedding_dimension() == 768
+    assert model.get_embedding_dimension() == 768
 
     rows = load_triplets(data_path, limit=args.limit or None)
     examples = [InputExample(texts=[r["query"], r["pos"]] + r.get("negs", [])[:1]) for r in rows]
@@ -100,7 +104,7 @@ def main():
     except Exception as e:
         raise RuntimeError(f"LoRA wrap failed: {e}")
 
-    loss = losses.MultipleNegativesRankingLoss(model)
+    loss = MultipleNegativesRankingLoss(model)
     model.fit(
         train_objectives=[(loader, loss)],
         epochs=args.epochs,

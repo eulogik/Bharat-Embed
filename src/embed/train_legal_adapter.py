@@ -40,7 +40,11 @@ def main():
     print(f"data sha: {sha256_file(data_path)}")
 
     import torch
-    from sentence_transformers import SentenceTransformer, InputExample, losses
+    from sentence_transformers import SentenceTransformer, InputExample
+    try:
+        from sentence_transformers.sentence_transformer.losses import MultipleNegativesRankingLoss
+    except ImportError:
+        from sentence_transformers.losses import MultipleNegativesRankingLoss
     from torch.utils.data import DataLoader
     from peft import LoraConfig, get_peft_model
 
@@ -66,7 +70,7 @@ def main():
     except Exception as e:
         raise RuntimeError(f"LoRA wrap failed: {e}")
 
-    loss = losses.MultipleNegativesRankingLoss(model)
+    loss = MultipleNegativesRankingLoss(model)
     model.fit(
         train_objectives=[(loader, loss)],
         epochs=args.epochs,
