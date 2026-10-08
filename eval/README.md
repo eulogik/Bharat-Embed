@@ -22,4 +22,4 @@ Do not move goalposts after training. These gates were set before run one.
 - Publish eval JSON raw plus truncation chart.
 - Omitted: vision, video, audio. Text only fork.
 - Tamil and Telugu likely weaker than Hindi and Hinglish. Report per lang.
-- Long doc 8K kept in arch but trained at 512. Mark long doc as unmeasured.
+- Long doc 8K kept in arch but trained at 256 (512 planned, 16GB box swaps above 256). Mark long doc as unmeasured.

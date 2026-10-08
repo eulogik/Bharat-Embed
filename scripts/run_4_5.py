@@ -58,11 +58,13 @@ def main():
     log("run_4_5 begin")
     # Batch 8 not 16: batch 16 fp32 swaps the 16GB box to death (15G + swap full,
     # steps decay 1s to 27s/it). Batch 8 holds ~2it/s steady. Noted in eval.
+    # max-len 256 not 512: halves activations again, sizing test proved steady.
+    # Short docs plus Hinglish queries fit fine. Honest note in eval README.
     rc = run(
         [str(VENV_PY), "src/embed/train_indic.py",
          "--data", str(DATA / "triplets_40k.jsonl"),
          "--out", str(CKPT_INDIC),
-         "--epochs", "3", "--batch", "8"],
+         "--epochs", "3", "--batch", "8", "--max-len", "256"],
         "train-indic",
     )
     if rc != 0:
