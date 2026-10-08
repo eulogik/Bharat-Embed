@@ -56,7 +56,11 @@ def main():
     examples = [InputExample(texts=[r["query"], r["pos"]] + r.get("negs", [])[:1]) for r in rows]
     loader = DataLoader(examples, batch_size=args.batch, shuffle=True)
 
-    lora_cfg = LoraConfig(r=args.lora_r, lora_alpha=32, lora_dropout=0.05, bias="none", task_type="FEATURE_EXTRACTION")
+    lora_cfg = LoraConfig(
+        r=args.lora_r, lora_alpha=32, lora_dropout=0.05, bias="none",
+        task_type="FEATURE_EXTRACTION",
+        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    )
     try:
         model._first_module().auto_model = get_peft_model(model._first_module().auto_model, lora_cfg)
     except Exception as e:
