@@ -45,6 +45,7 @@ def main():
         enc = enc.merge_and_unload()
     except Exception:
         pass
+    enc = enc.cpu().float()
     enc.eval()
     tok = first.tokenizer
     tok.save_pretrained(str(out))
