@@ -41,6 +41,9 @@ def run(cmd: list, step: str):
     env["HF_HOME"] = str(KIO / "hf_cache")
     env["HF_HUB_CACHE"] = str(KIO / "hf_cache")
     env["TRANSFORMERS_CACHE"] = str(KIO / "hf_cache")
+    # MPS caching allocator grows without bound on long runs (swap death at ~68%).
+    # Zero disables the cache so freed blocks return to the system.
+    env["PYTORCH_MPS_HIGH_WATERMARK_RATIO"] = "0.0"
     LOG.parent.mkdir(parents=True, exist_ok=True)
     with open(LOG, "a") as lf:
         lf.flush()
