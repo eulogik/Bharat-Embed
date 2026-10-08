@@ -41,8 +41,16 @@ def run(cmd: list, step: str):
     env["HF_HOME"] = str(KIO / "hf_cache")
     env["HF_HUB_CACHE"] = str(KIO / "hf_cache")
     env["TRANSFORMERS_CACHE"] = str(KIO / "hf_cache")
-    p = subprocess.run(cmd, cwd="/Users/eulogikdeveloper/Documents/Bharat-Embed", env=env)
-    log(f"END {step}: exit={p.returncode}")
+    LOG.parent.mkdir(parents=True, exist_ok=True)
+    with open(LOG, "a") as lf:
+        lf.flush()
+        p = subprocess.run(
+            cmd, cwd="/Users/eulogikdeveloper/Documents/Bharat-Embed", env=env,
+            stdout=lf, stderr=subprocess.STDOUT,
+        )
+        lf.write(f"[{datetime.now().isoformat(timespec='seconds')}] END {step}: exit={p.returncode}\n")
+        lf.flush()
+    print(f"END {step}: exit={p.returncode}", flush=True)
     return p.returncode
 
 
