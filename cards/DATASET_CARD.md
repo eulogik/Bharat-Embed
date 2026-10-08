@@ -1,3 +1,15 @@
+---
+license: apache-2.0
+task_categories:
+- sentence-similarity
+language:
+- hi
+- en
+tags:
+- hinglish
+- indic-retrieval
+---
+
 # Bharat triplets 40k dataset card draft
 
 Viewer enabled dataset for Indic retrieval training plus GEO citations.
