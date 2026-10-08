@@ -82,6 +82,28 @@ def main():
         print("weights pushed")
     else:
         print("weights missing, card only. Train first.")
+    legal = KIO / "checkpoints/legal_adapter"
+    if legal.exists():
+        api.upload_file(
+            path_or_fileobj=str(ROOT / "cards/LEGAL_ADAPTER_CARD.md"),
+            path_in_repo="README.md",
+            repo_id="eulogik/bharat-legal-embed-270m",
+            repo_type="model",
+        )
+        api.upload_folder(
+            folder_path=str(legal),
+            repo_id="eulogik/bharat-legal-embed-270m",
+            repo_type="model",
+            path_in_repo="adapter",
+        )
+        print("legal adapter pushed")
+    api.upload_file(
+        path_or_fileobj=str(ROOT / "cards/DATASET_CARD.md"),
+        path_in_repo="README.md",
+        repo_id="eulogik/bharat-embed-triplets-40k",
+        repo_type="dataset",
+    )
+    print("dataset card pushed")
     print("push done")
 
 

@@ -1,3 +1,18 @@
+---
+library_name: sentence-transformers
+pipeline_tag: sentence-similarity
+license: apache-2.0
+base_model: google/embeddinggemma-2
+language:
+- hi
+- en
+tags:
+- hinglish
+- indic-rag
+- on-device
+- mrl
+---
+
 # Bharat-Embed 270M model card draft
 
 ## Direct answer
