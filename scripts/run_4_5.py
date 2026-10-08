@@ -37,6 +37,7 @@ def run(cmd: list, step: str):
     log(f"START {step}: {' '.join(cmd)}")
     env = dict(os.environ)
     env["TMPDIR"] = str(KIO / "tmp")
+    env["PYTHONUNBUFFERED"] = "1"
     env["HF_HOME"] = str(KIO / "hf_cache")
     env["HF_HUB_CACHE"] = str(KIO / "hf_cache")
     env["TRANSFORMERS_CACHE"] = str(KIO / "hf_cache")
