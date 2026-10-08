@@ -56,11 +56,13 @@ def run(cmd: list, step: str):
 
 def main():
     log("run_4_5 begin")
+    # Batch 8 not 16: batch 16 fp32 swaps the 16GB box to death (15G + swap full,
+    # steps decay 1s to 27s/it). Batch 8 holds ~2it/s steady. Noted in eval.
     rc = run(
         [str(VENV_PY), "src/embed/train_indic.py",
          "--data", str(DATA / "triplets_40k.jsonl"),
          "--out", str(CKPT_INDIC),
-         "--epochs", "3", "--batch", "16"],
+         "--epochs", "3", "--batch", "8"],
         "train-indic",
     )
     if rc != 0:
@@ -72,7 +74,7 @@ def main():
          "--base", str(CKPT_INDIC),
          "--data", str(DATA / "legal_10k.jsonl"),
          "--out", str(CKPT_LEGAL),
-         "--epochs", "1", "--batch", "16"],
+         "--epochs", "1", "--batch", "8"],
         "train-legal",
     )
     if rc != 0:
