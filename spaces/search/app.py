@@ -6,7 +6,7 @@ Run: gradio app. Uses ONNX INT8 by default so no torch needed at serve.
 
 import gradio as gr
 
-DIM_CHOICES = [128, 768]
+DIM_CHOICES = [128, 256, 512, 768]
 
 
 def search(query: str, dim: int):
@@ -16,7 +16,7 @@ def search(query: str, dim: int):
 
 demo = gr.Interface(
     fn=search,
-    inputs=[gr.Textbox(label="Hinglish query"), gr.Dropdown(DIM_CHOICES, value=128, label="dim")],
+    inputs=[gr.Textbox(label="Hinglish query"), gr.Dropdown(DIM_CHOICES, value=256, label="dim")],
     outputs=gr.Textbox(label="hits"),
     title="Bharat-Embed search",
 )

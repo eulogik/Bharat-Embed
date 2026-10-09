@@ -38,7 +38,7 @@ Find with: `embeddinggemma2 hindi hinglish indic rag on-device onnx gguf qdrant 
 
 ## Measured numbers
 
-All numbers below were measured on this box, 2026-10-08/09. No estimates.
+All numbers below were measured on a Mac mini M4, 2026-10-08/09. No estimates.
 
 | Check | Base text only | Bharat-Embed | Delta |
 |---|---|---:|---:|
@@ -51,6 +51,17 @@ All numbers below were measured on this box, 2026-10-08/09. No estimates.
 Note: the mteb runs use the default mteb encoding path, same both sides. The +0.03 stretch gate was not met. This card reports the miss plainly. v1.1 retrains on diverse real Hindi.
 
 ![Truncation chart](assets/truncation.png)
+
+### Truncation cost on Hindi retrieval (measured NDCG@10)
+
+| Dims | Score | vs 768d |
+|---|---:|---:|
+| 768 | 0.7324 | - |
+| 512 | 0.7247 | -0.008 |
+| 256 | 0.7023 | -0.030 |
+| 128 | 0.6294 | -0.103 |
+
+Plain read: 512d is near lossless. 256d costs 0.03. 128d costs 0.10 on Hindi, steeper than the base card multilingual average. Pick 512 for quality, 256 for the cost balance. 128d only for tight budgets with eyes open.
 
 ## How it was built
 
@@ -75,9 +86,9 @@ model = SentenceTransformer(
     model_kwargs={"torch_dtype": "bfloat16"},
 )
 q = model.encode("GST refund kaise claim karein?", prompt_name="SearchQuery",
-                 truncate_dim=128, normalize_embeddings=True)
+                 truncate_dim=256, normalize_embeddings=True)
 d = model.encode("title: GST refund | text: apply through portal with invoice proof",
-                 truncate_dim=128, normalize_embeddings=True)
+                 truncate_dim=256, normalize_embeddings=True)
 print(model.similarity(q, d))
 ```
 
@@ -87,7 +98,7 @@ Rules: queries and docs share one dim. Always normalize after truncate. fp16 nev
 
 ```bash
 pip install onnxruntime qdrant-client
-python scripts/encode_onnx.py --model onnx/int8 --queries queries.txt --truncate 128
+python scripts/encode_onnx.py --model onnx/int8 --queries queries.txt --truncate 256
 ```
 
 ## Limits

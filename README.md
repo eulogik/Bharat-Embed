@@ -31,7 +31,7 @@ model = SentenceTransformer(
     model_kwargs={"torch_dtype": "bfloat16"},
 )
 q = model.encode("GST refund kaise claim karein?", prompt_name="SearchQuery",
-                 truncate_dim=128, normalize_embeddings=True)
+                 truncate_dim=256, normalize_embeddings=True)
 ```
 
 Full snippets in [USAGE.md](USAGE.md). Model card with measured tables in [cards/MAIN_MODEL_CARD.md](cards/MAIN_MODEL_CARD.md).

@@ -23,12 +23,12 @@ model = SentenceTransformer(
 q = model.encode(
     "GST refund kaise claim karein?",
     prompt_name="SearchQuery",
-    truncate_dim=128,
+    truncate_dim=256,
     normalize_embeddings=True,
 )
 d = model.encode(
     "title: GST refund | text: apply through portal with invoice proof",
-    truncate_dim=128,
+    truncate_dim=256,
     normalize_embeddings=True,
 )
 print(model.similarity(q, d))
@@ -43,7 +43,7 @@ Rules:
 
 ```bash
 pip install onnxruntime qdrant-client
-python scripts/encode_onnx.py --model onnx/int8 --queries queries.txt --truncate 128
+python scripts/encode_onnx.py --model onnx/int8 --queries queries.txt --truncate 256
 ```
 
 ## GGUF and Ollama
