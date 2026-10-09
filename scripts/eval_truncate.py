@@ -36,10 +36,11 @@ def fixed_dim_model(path: str, dim: int):
                 device="cpu",
             )
 
-        def encode(self, sentences, **kwargs):
+        def encode(self, sentences=None, texts=None, **kwargs):
+            body = sentences if sentences is not None else texts
             kwargs["truncate_dim"] = dim
             kwargs["normalize_embeddings"] = True
-            return super().encode(sentences, **kwargs)
+            return super().encode(body, **kwargs)
 
     return _DimST()
 
