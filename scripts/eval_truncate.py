@@ -17,14 +17,31 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 KIO = Path("/Volumes/KIOXIA 1TB/bharat-embed")
 
 
-class FixedDimWrapper:
-    def __init__(self, st_model, dim: int):
-        self.m = st_model
-        self.dim = dim
+def fixed_dim_model(path: str, dim: int):
+    """ST model that encodes at one fixed truncate dim.
 
-    def encode(self, sentences, prompt_name=None, **kwargs):
-        kwargs.pop("normalize_embeddings", None)
-        return self.m.encode(sentences, truncate_dim=self.dim, normalize_embeddings=True, **kwargs)
+    RetrievalEvaluator wants a SearchInterface, Encoder, or CrossEncoder.
+    A plain duck type fails the check, so this is a real SentenceTransformer
+    subclass that injects the dim on every encode call.
+    """
+    import torch
+    from sentence_transformers import SentenceTransformer
+
+    class _DimST(SentenceTransformer):
+        def __init__(self):
+            super().__init__(
+                path,
+                config_kwargs={"vision_config": None, "audio_config": None},
+                model_kwargs={"torch_dtype": torch.float32},
+                device="cpu",
+            )
+
+        def encode(self, sentences, **kwargs):
+            kwargs["truncate_dim"] = dim
+            kwargs["normalize_embeddings"] = True
+            return super().encode(sentences, **kwargs)
+
+    return _DimST()
 
 
 def load_st(path: str):
@@ -40,16 +57,24 @@ def load_st(path: str):
 
 
 def main():
+    import argparse
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--only", default="")
+    solo = ap.parse_args().only
+
     import mteb
 
     task = mteb.get_tasks(tasks=["IndicQARetrieval"], languages=["hin"])[0]
-    out = {}
     runs = [("base", "google/embeddinggemma-2", 768)]
     runs += [("ours", str(KIO / "checkpoints/best_indic_merged"), d) for d in (512, 256, 128)]
+    if solo:
+        runs = [r for r in runs if f"{r[0]}_{r[2]}" == solo]
+    out = {}
     for tag, path, dim in runs:
         key = f"{tag}_{dim}"
         print(f"START {key}", flush=True)
-        model = FixedDimWrapper(load_st(path), dim)
+        model = fixed_dim_model(path, dim)
         res = mteb.MTEB(tasks=[task]).run(model, output_folder=str(KIO / "eval" / f"trunc_{key}"))
         blob = str(res)
         import re
@@ -61,8 +86,14 @@ def main():
     out["ours_768"] = 0.73235
     out["base_768"] = 0.72785
     p = KIO / "eval/truncate.json"
-    p.write_text(json.dumps(out, indent=2))
-    print(f"wrote {p}: {out}")
+    prev = {}
+    if p.exists():
+        import json as _json
+
+        prev = _json.loads(p.read_text())
+    prev.update(out)
+    p.write_text(__import__("json").dumps(prev, indent=2))
+    print(f"wrote {p}: {prev}")
 
 
 if __name__ == "__main__":
