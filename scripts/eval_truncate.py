@@ -80,12 +80,14 @@ def main():
         key = f"{tag}_{dim}"
         print(f"START {key}", flush=True)
         model = fixed_dim_model(path, dim)
-        res = mteb.MTEB(tasks=[task]).run(model, output_folder=str(KIO / "eval" / f"trunc_{key}"))
-        blob = str(res)
-        import re
+        mteb.MTEB(tasks=[task]).run(model, output_folder=str(KIO / "eval" / f"trunc_{key}"))
+        import glob as _glob
+        import json as _json
 
-        mains = re.findall(r"ndcg_at_10.: ([\d.]+)", blob)
-        out[key] = float(mains[0]) if mains else None
+        val = None
+        for jf in _glob.glob(str(KIO / "eval" / f"trunc_{key}" / "*" / "*" / "IndicQARetrieval.json")):
+            val = _json.loads(Path(jf).read_text())["scores"]["test"][0].get("ndcg_at_10")
+        out[key] = val
         print(f"END {key}: {out[key]}", flush=True)
     # ours_768 already measured earlier
     out["ours_768"] = 0.73235
