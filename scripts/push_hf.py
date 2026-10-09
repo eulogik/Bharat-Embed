@@ -122,6 +122,23 @@ def main():
         repo_type="dataset",
     )
     print("dataset card pushed")
+    gguf_dir = KIO / "gguf"
+    gguf_files = ["bharat-embed-BF16.gguf", "bharat-embed-Q8_0.gguf", "bharat-embed-Q6_K.gguf", "bharat-embed-Q4_K_M.gguf"]
+    if (gguf_dir / "bharat-embed-Q4_K_M.gguf").exists():
+        api.upload_file(
+            path_or_fileobj=str(ROOT / "cards/GGUF_CARD.md"),
+            path_in_repo="README.md",
+            repo_id="eulogik/bharat-embed-270m-gemma2-GGUF",
+            repo_type="model",
+        )
+        for gf in gguf_files:
+            api.upload_file(
+                path_or_fileobj=str(gguf_dir / gf),
+                path_in_repo=gf,
+                repo_id="eulogik/bharat-embed-270m-gemma2-GGUF",
+                repo_type="model",
+            )
+        print("gguf pack pushed")
     print("push done")
 
 
