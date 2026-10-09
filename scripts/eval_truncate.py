@@ -38,6 +38,10 @@ def fixed_dim_model(path: str, dim: int):
 
         def encode(self, sentences=None, texts=None, **kwargs):
             body = sentences if sentences is not None else texts
+            if body is None:
+                body = kwargs.pop("inputs", None)
+            kwargs.pop("sentences", None)
+            kwargs.pop("texts", None)
             kwargs["truncate_dim"] = dim
             kwargs["normalize_embeddings"] = True
             return super().encode(body, **kwargs)
