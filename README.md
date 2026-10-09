@@ -1,17 +1,26 @@
 # Bharat-Embed 270M
 
-Text only EmbeddingGemma-2 fork for Hinglish and Hindi retrieval RAG. Built on Mac mini M4. Apache-2.0.
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+![Parameters 270M](https://img.shields.io/badge/Parameters-270M-green)
+![Hindi NDCG 0.7324](https://img.shields.io/badge/Hindi%20NDCG%4010-0.7324-orange)
+![Tests 12 passing](https://img.shields.io/badge/Tests-12%20passing-brightgreen)
+![Built by Eulogik](https://img.shields.io/badge/Built%20by-Eulogik-7c3aed)
 
-## What is here
+![Bharat-Embed overview](assets/hero.png)
 
-- Hero: Indic retrieval LoRA (270M text only, MRL 128 default)
-- Edge pack: ONNX INT8 plus GGUF plus WebGPU Space
-- Legal adapter: DIFC ADGM GST VAT, adapter only
-- Eval gates locked before run one in eval/README.md
+Text only EmbeddingGemma-2 fork for **Hinglish and Hindi retrieval RAG**. Built on a Mac mini M4 by [Eulogik](https://github.com/eulogik). Apache-2.0.
+
+## What it is
+
+| Piece | Status |
+|---|---|
+| Indic retrieval weights (270M, MRL 128) | Trained, loss 0.586 to 0.236, [on HF](https://huggingface.co/eulogik/bharat-embed-270m-gemma2) |
+| ONNX INT8 edge pack | Exported, parity drift 0.0066 |
+| Legal adapter (DIFC, GST, VAT) | Trained, loss 0.689 |
+| GGUF quants | Next |
+| MTEB Hindi retrieval | +0.0045 over base, reported plainly |
 
 ## Quickstart
-
-See USAGE.md for copy paste snippets.
 
 ```python
 from sentence_transformers import SentenceTransformer
@@ -21,32 +30,30 @@ model = SentenceTransformer(
     config_kwargs={"vision_config": None, "audio_config": None},
     model_kwargs={"torch_dtype": "bfloat16"},
 )
-q = model.encode("GST refund kaise claim karein?", prompt_name="SearchQuery", truncate_dim=128, normalize_embeddings=True)
+q = model.encode("GST refund kaise claim karein?", prompt_name="SearchQuery",
+                 truncate_dim=128, normalize_embeddings=True)
 ```
+
+Full snippets in [USAGE.md](USAGE.md). Model card with measured tables in [cards/MAIN_MODEL_CARD.md](cards/MAIN_MODEL_CARD.md).
 
 ## Repo layout
 
-- src/embed: train, export, shared prefix helpers
-- scripts: triplet prep, eval slice, parity, onnx encode, hf push
-- tests: prefix plus truncation gates
-- eval/README.md: pre-registered gates
-- data/frozen/README.md: freeze policy plus hashes
-- cards: model, adapter, dataset drafts
-- spaces: search plus webgpu demos
-- blog: build log draft
+- `src/embed` train, export, shared prefix helpers
+- `scripts` triplet prep, eval, parity, charts, HF push
+- `tests` prefix plus ship gates (12 green)
+- `eval/README.md` pre-registered gates, locked before run one
+- `cards` model, adapter, dataset cards plus collection
+- `spaces` search plus webgpu demos
+- `assets` hero, architecture, truncation chart
 
-## Train (needs heavy run, ask before starting on M4)
+## Honest numbers
 
-```bash
-pip install -r requirements.txt
-python scripts/prepare_triplets.py
-python src/embed/train_indic.py --data data/frozen/triplets_40k.jsonl --epochs 3 --batch 16
-python src/embed/train_legal_adapter.py --data data/frozen/legal_10k.jsonl --epochs 1
-python scripts/eval_mteb_slice.py --ckpt checkpoints/best_indic
-```
+Hindi IndicQA NDCG@10: base 0.7279, ours 0.7324. STS tie. The +0.03 stretch gate was missed and is stated as missed. v1.1 retrains on diverse real Hindi.
 
-## Status
+## Eulogik family
 
-Scaffold plus gates plus docs are done and tested. Weights, ONNX, GGUF, and Spaces go live after the M4 train run plus eval.
+- Reranker: [flashrank-pro-base](https://huggingface.co/eulogik/flashrank-pro-base)
+- HF org: [huggingface.co/eulogik](https://huggingface.co/eulogik)
+- Code org: [github.com/eulogik](https://github.com/eulogik)
 
-License: Apache-2.0. Base: google/embeddinggemma-2.
+License Apache-2.0. Base `google/embeddinggemma-2`.
