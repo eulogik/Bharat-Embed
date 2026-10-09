@@ -72,7 +72,7 @@ def main():
             repo_id="eulogik/bharat-embed-270m-gemma2",
             repo_type="model",
         )
-    ckpt = KIO / "checkpoints/best_indic"
+    ckpt = KIO / "checkpoints/best_indic_merged"
     if ckpt.exists():
         api.upload_folder(
             folder_path=str(ckpt),
@@ -82,7 +82,16 @@ def main():
         print("weights pushed")
     else:
         print("weights missing, card only. Train first.")
-    legal = KIO / "checkpoints/legal_adapter"
+    onnx_dir = KIO / "onnx"
+    if (onnx_dir / "model_int8.onnx").exists():
+        api.upload_folder(
+            folder_path=str(onnx_dir),
+            repo_id="eulogik/bharat-embed-270m-gemma2",
+            repo_type="model",
+            path_in_repo="onnx",
+        )
+        print("onnx pack pushed")
+    legal = KIO / "checkpoints/legal_merged"
     if legal.exists():
         api.upload_file(
             path_or_fileobj=str(ROOT / "cards/LEGAL_ADAPTER_CARD.md"),
