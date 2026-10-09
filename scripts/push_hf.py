@@ -91,6 +91,15 @@ def main():
             path_in_repo="onnx",
         )
         print("onnx pack pushed")
+    assets = ROOT / "assets"
+    if (assets / "truncation.png").exists():
+        api.upload_folder(
+            folder_path=str(assets),
+            repo_id="eulogik/bharat-embed-270m-gemma2",
+            repo_type="model",
+            path_in_repo="assets",
+        )
+        print("assets pushed")
     legal = KIO / "checkpoints/legal_merged"
     if legal.exists():
         api.upload_file(
