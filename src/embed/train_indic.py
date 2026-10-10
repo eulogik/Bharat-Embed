@@ -88,6 +88,8 @@ def main():
         model_kwargs={"torch_dtype": torch.bfloat16 if dtype == "bfloat16" else torch.float32},
     )
     assert model.get_embedding_dimension() == 768
+    model.max_seq_length = args.max_len
+    print(f"max_seq_length set to {model.max_seq_length}")
 
     rows = load_triplets(data_path, limit=args.limit or None)
     examples = [InputExample(texts=[r["query"], r["pos"]] + r.get("negs", [])[:1]) for r in rows]
