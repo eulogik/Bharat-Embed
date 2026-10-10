@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bharat-Embed 270M by Eulogik</title>
+<meta name="description" content="270M text-only EmbeddingGemma-2 fork for Hinglish and Hindi retrieval RAG. Apache-2.0. Measured numbers, ONNX INT8, GGUF quants.">
+<style>
+body { font-family: system-ui, sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; line-height: 1.6; color: #111; }
+h1 { font-size: 2rem; } table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+td, th { border: 1px solid #ccc; padding: 0.4rem 0.6rem; text-align: left; }
+code { background: #f4f4f4; padding: 0.1rem 0.3rem; } pre { background: #f4f4f4; padding: 1rem; overflow-x: auto; }
+.badge img { margin-right: 0.3rem; }
+</style>
+</head>
+<body>
+<h1>Bharat-Embed 270M</h1>
+<p class="badge">
+<img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="license">
+<img src="https://img.shields.io/badge/Parameters-270M-green" alt="params">
+<img src="https://img.shields.io/badge/Hindi%20NDCG%4010-0.7324-orange" alt="ndcg">
+<img src="https://img.shields.io/badge/Built%20by-Eulogik-7c3aed" alt="eulogik">
+</p>
+<p><strong>270M text only EmbeddingGemma-2 fork for Hinglish and Hindi retrieval RAG.</strong>
+Loads without vision or audio. ONNX INT8 and GGUF ready. Apache-2.0. By
+<a href="https://github.com/eulogik">Eulogik</a>.</p>
+<h2>Measured numbers</h2>
+<table>
+<tr><th>Check</th><th>Base</th><th>Ours</th></tr>
+<tr><td>Hindi IndicQA NDCG@10, 768d</td><td>0.7279</td><td>0.7324</td></tr>
+<tr><td>Hindi STS spearman</td><td>0.6430</td><td>0.6423</td></tr>
+<tr><td>ONNX INT8 drift</td><td>-</td><td>0.0066</td></tr>
+</table>
+<h2>Truncation cost on Hindi (measured)</h2>
+<table>
+<tr><th>Dims</th><th>NDCG@10</th><th>vs 768</th></tr>
+<tr><td>768</td><td>0.7324</td><td>-</td></tr>
+<tr><td>512</td><td>0.7247</td><td>-0.008</td></tr>
+<tr><td>256</td><td>0.7023</td><td>-0.030</td></tr>
+<tr><td>128</td><td>0.6294</td><td>-0.103</td></tr>
+</table>
+<p>Pick 512 for quality, 256 for balance. 128 costs real quality on Hindi.</p>
+<h2>Quickstart</h2>
+<pre>from sentence_transformers import SentenceTransformer
+model = SentenceTransformer("eulogik/bharat-embed-270m-gemma2",
+  config_kwargs={"vision_config": None, "audio_config": None},
+  model_kwargs={"torch_dtype": "bfloat16"})
+q = model.encode("GST refund kaise claim karein?", prompt_name="SearchQuery",
+  truncate_dim=256, normalize_embeddings=True)</pre>
+<h2>Links</h2>
+<ul>
+<li><a href="https://huggingface.co/eulogik/bharat-embed-270m-gemma2">Weights</a></li>
+<li><a href="https://huggingface.co/eulogik/bharat-embed-270m-gemma2-GGUF">GGUF quants</a></li>
+<li><a href="https://huggingface.co/eulogik/bharat-legal-embed-270m">Legal adapter</a></li>
+<li><a href="https://huggingface.co/eulogik/bharat-embed-triplets-40k">Triplets dataset</a></li>
+<li><a href="https://github.com/eulogik/Bharat-Embed">Code</a></li>
+<li><a href="https://huggingface.co/eulogik/flashrank-pro-base">Reranker</a></li>
+</ul>
+</body>
+</html>
