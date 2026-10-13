@@ -72,7 +72,7 @@ Plain read: 512d is near lossless. 256d costs 0.03. 128d costs 0.10 on Hindi, st
 | Base | `google/embeddinggemma-2`, text only (`vision_config` None, `audio_config` None) |
 | Method | LoRA r16 on attention plus MLP, merged to clean keys |
 | Data | 40k frozen triplets (15k Hinglish synth, 5k Banking77, 10k legal synth, 10k near-miss hard), SHA pinned |
-| Train | 3 epochs, batch 8, len 256, AdamW 2e-5, fp32, Mac mini M4 |
+| Train | 3 epochs, batch 8, fp32, Mac mini M4 (v1 ran at model default length, length flag was dead then; v1.1 uses 256 enforced) |
 | License note | FLORES eval only (CC-BY-SA). MS MARCO excluded (non-commercial terms). Train pack is Banking77 plus ours. |
 
 ## Quickstart
