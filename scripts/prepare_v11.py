@@ -1,8 +1,11 @@
-"""Freeze v1.1 triplets: MIRACL Hindi real queries plus v1 slices.
+"""Freeze v1.2 triplets: MIRACL Hindi plus the full v1 mix.
 
-Mix: ~10k MIRACL hi (real queries, judged positives, Apache-2.0) plus
-15k Hinglish synth plus 5k Banking77 plus 10k legal synth = ~40k.
-Writes triplets_40k_v11.jsonl plus SHA256SUMS. Stays local until verified.
+The v1.1 attempt dropped the 10k near-miss hard slice and Hindi retrieval
+fell 0.732 to 0.581. v1.2 puts that slice back and keeps MIRACL on top.
+
+Mix: 2k MIRACL hi (real queries, judged positives, Apache-2.0), 15k Hinglish
+synth, 5k Banking77, 10k legal synth, 10k near-miss hard.
+Writes triplets_40k_v12.jsonl plus SHA256SUMS_V12. Stays local until verified.
 
 Run: python scripts/prepare_v11.py
 """
@@ -16,7 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.prepare_triplets import synth_hinglish, synth_legal, pull_banking77
+from scripts.prepare_triplets import build_near_miss_hard, pull_banking77, synth_hinglish, synth_legal
 
 RAW = Path("/Volumes/KIOXIA 1TB/bharat-embed/data/_raw/miracl-hi")
 OUT_DIR = Path("/Volumes/KIOXIA 1TB/bharat-embed/data")
@@ -68,13 +71,14 @@ def main():
                 "src": "miracl-hi-train-apache2",
             })
     print(f"miracl rows: {len(rows)}")
+    rows += build_near_miss_hard(10000)
     rows += synth_hinglish(15000)
     rows += pull_banking77(5000)
     rows += synth_legal(10000)
     random.shuffle(rows)
     print(f"total: {len(rows)}")
 
-    trip = OUT_DIR / "triplets_40k_v11.jsonl"
+    trip = OUT_DIR / "triplets_40k_v12.jsonl"
     with open(trip, "w") as f:
         for r in rows:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
@@ -82,8 +86,8 @@ def main():
     with open(trip, "rb") as f:
         for chunk in iter(lambda: f.read(1 << 20), b""):
             h.update(chunk)
-    sums = OUT_DIR / "SHA256SUMS_V11"
-    sums.write_text(f"{h.hexdigest()}  triplets_40k_v11.jsonl\n")
+    sums = OUT_DIR / "SHA256SUMS_V12"
+    sums.write_text(f"{h.hexdigest()}  triplets_40k_v12.jsonl\n")
     print(f"wrote {trip} ({len(rows)} rows)")
     print(sums.read_text().strip())
 
