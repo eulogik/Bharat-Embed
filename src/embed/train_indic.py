@@ -107,6 +107,10 @@ def main():
         raise RuntimeError(f"LoRA wrap failed: {e}")
 
     loss = MultipleNegativesRankingLoss(model)
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    save_every = max(500, len(loader) // 4)
+    print(f"checkpoint every {save_every} steps")
     model.fit(
         train_objectives=[(loader, loss)],
         epochs=args.epochs,
@@ -114,6 +118,8 @@ def main():
         optimizer_params={"lr": args.lr},
         show_progress_bar=True,
         output_path=args.out,
+        checkpoint_path=str(out_dir),
+        checkpoint_save_steps=save_every,
     )
     print(f"saved to {args.out}")
 
