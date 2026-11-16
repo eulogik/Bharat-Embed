@@ -11,3 +11,4 @@ data/frozen/*.jsonl
 *.tflite
 *.gguf
 .DS_Store
+checkpoints/
