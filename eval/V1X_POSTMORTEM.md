@@ -77,11 +77,52 @@ models. But the comparison is the point, and the comparison says parity.
 Files: eval/cross_script_pairs.jsonl, scripts/eval_cross_script.py,
 eval/cross_script_base.json, eval/cross_script_v1.json.
 
+## 2026-11-16 addendum 2: legal vertical also has no embedding gap
+
+Same treatment for the legal thesis (DIFC/ADGM/GST/VAT). Used real regulatory
+data, not synthetic: RegNLP/xrefrag-adgm-dpel, Apache-2.0, 290 professional
+questions over ADGM data protection law, 304 passage corpus. Both the source
+and target passage of each cross-reference sit in the corpus, so the distractor
+is topically adjacent by construction. Random R@5 over 304 docs is 1.6 percent.
+
+| Model | R@1 | R@5 | MRR@10 |
+|---|---:|---:|---:|
+| base text only | 0.3966 | 0.9793 | 0.6503 |
+| v1 Indic | 0.4276 | 0.9655 | 0.6673 |
+| legal adapter | 0.0069 | 0.0310 | 0.0171 |
+| base plus flashrank rerank | 0.3966 | 0.9414 | 0.6237 |
+
+Read it plainly:
+
+1. Base retrieves the right statute in the top 5 for 98 percent of real
+   professional questions. For RAG that is solved. There is no gap to fill.
+2. v1 is parity again. R@1 plus 0.03, R@5 minus 0.014. Noise.
+3. The legal adapter is destroyed. R@5 3.1 percent, barely above random. One
+   epoch on templated synthetic GST data wiped its general ability. It is
+   public right now and that is a liability, not an asset.
+4. The reranker does not help here. Wiring verified on a spot check, scores
+   separate cleanly (0.996 for the right passage, 0.010 for an unrelated one).
+   But on this task the source passage is lexically closer to the question than
+   the target, so the cross-encoder prefers the near miss. R@5 drops to 94.1.
+
+R@1 of 40 percent is not a defect. It is the benchmark being adversarial by
+design: pick the exact provision, not the passage that cross-refers to it. In
+normal legal RAG you feed the top 5 and the model reads both.
+
+Scripts: scripts/eval_legal.py, scripts/eval_legal_rerank.py.
+Results: eval/legal_base.json, eval/legal_v1.json, eval/legal_legal_adapter.json,
+eval/legal_stack_base_flashrank.json.
+
 ## Verdict
+
 
 The fine-tune line is closed. Not because the training was bad, but because
 the base model already solves the problem we set out to solve. There is no
 honest marketing claim left for these weights.
+
+Two verticals tested, Indic and legal. Base wins or ties both. The legal
+adapter should come down from HF because measured R@5 of 3.1 percent is
+worse than random plus one, and it sits under our name.
 
 What still has value: the eval harness, the ONNX parity work, the GGUF pack,
 and the discipline of shipping measured numbers.
